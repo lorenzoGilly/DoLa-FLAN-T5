@@ -7,8 +7,8 @@ import json
 
 import torch
 import torch.nn.functional as F
-from transformers import T5Tokenizer, T5ForConditionalGeneration, AutoTokenizer, AutoModelForSeq2SeqLM
-from transformers.generation.stopping_criteria import StoppingCriteriaList, LLamaQaStoppingCriteria
+from transformers import T5ForConditionalGeneration, AutoTokenizer, AutoModelForSeq2SeqLM
+from transformers.generation.stopping_criteria import StoppingCriteriaList, T5StoppingCriteria
 
 import argparse
 import warnings
@@ -29,19 +29,28 @@ class DoLaT5:
         self.model.to(device)
 
     def load_model(self, model_name):
-        if "t5" in model_name or "flan-t5" in model_name:
-            tokenizer = T5Tokenizer.from_pretrained(model_name)
-            model = T5ForConditionalGeneration.from_pretrained(model_name)
-        else:
-            tokenizer = AutoTokenizer.from_pretrained(model_name)
-            model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
-        
         if self.device == "cuda":
-            model = model.to(self.device, dtype=torch.float16)
+            kwargs = {"torch_dtype": torch.float16, "offload_folder": f"{model_name}/offload"}
+            if self.num_gpus == "auto":
+                kwargs["device_map"] = "auto"
+            else:
+                self.num_gpus = int(self.num_gpus)
+                if self.num_gpus != 1:
+                    kwargs.update({
+                        "device_map": "auto",
+                        "max_memory": {i: f"{self.max_gpu_memory}GiB" for i in range(self.num_gpus)},
+                    })
         elif self.device == "cpu":
-            model = model.to(self.device)
+            kwargs = {}
         else:
             raise ValueError(f"Invalid device: {self.device}")
+        
+        tokenizer = AutoTokenizer.from_pretrained(model_name)
+        model = AutoModelForSeq2SeqLM.from_pretrained(model_name,
+            low_cpu_mem_usage=True, **kwargs)
+
+        if self.device == "cuda" and self.num_gpus == 1:
+            model.cuda()
         
         return model, tokenizer
 
@@ -53,7 +62,7 @@ class DoLaT5:
             stop_word_ids = self.tokenizer.encode('\n' + stop_word)[3:]
             list_stop_word_ids.append(stop_word_ids)
             print("Added stop word: ", stop_word, 'with the ids', stop_word_ids, flush=True)
-        self.stopping_criteria.append(LLamaQaStoppingCriteria(list_stop_word_ids))
+        self.stopping_criteria.append(T5StoppingCriteria(list_stop_word_ids))
 
     def generate(self, input_text, max_new_tokens=256, top_p=0.95, top_k=0, temperature=0.8, mature_layer=None, premature_layer=None, candidate_premature_layers=[], mode='baseline', verbose=True, remove_stop_words=False, relative_top=0.1, **kwargs):
         with torch.no_grad():
