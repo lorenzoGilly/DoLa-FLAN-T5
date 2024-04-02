@@ -57,7 +57,7 @@ class DoLaT5:
     def set_stop_words(self, stop_words):
         self.stop_words = stop_words
         self.stopping_criteria = StoppingCriteriaList()
-        list_stop_word_ids = [2247, 10]
+        list_stop_word_ids = [[2247, 10]]
         print("Added stop word: ", stop_words, 'with the ids', list_stop_word_ids, flush=True)
 
         self.stopping_criteria.append(T5StoppingCriteria(list_stop_word_ids))
