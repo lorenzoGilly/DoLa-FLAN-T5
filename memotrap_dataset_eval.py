@@ -211,8 +211,9 @@ if __name__ == "__main__":
         
         print(f'Question: {sample}\n\n'
             f'Model Completion: {model_completion}\n\n')
-
-        
+    
+    accuracy = sum(result_dict['correctness'])/len(result_dict['correctness'])
+    print(f'Total Accuracy: {accuracy}')    
     if mode == "dola" and args.debug:
         total_tokens = sum(premature_layer_dist.values())
         if total_tokens > 0:
