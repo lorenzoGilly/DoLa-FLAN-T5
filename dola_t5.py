@@ -57,11 +57,9 @@ class DoLaT5:
     def set_stop_words(self, stop_words):
         self.stop_words = stop_words
         self.stopping_criteria = StoppingCriteriaList()
-        list_stop_word_ids = []
-        for stop_word in self.stop_words:
-            stop_word_ids = self.tokenizer.encode('\n' + stop_word)[3:]
-            list_stop_word_ids.append(stop_word_ids)
-            print("Added stop word: ", stop_word, 'with the ids', stop_word_ids, flush=True)
+        list_stop_word_ids = [2247, 10]
+        print("Added stop word: ", stop_words, 'with the ids', list_stop_word_ids, flush=True)
+
         self.stopping_criteria.append(T5StoppingCriteria(list_stop_word_ids))
 
     def generate(self, input_text, max_new_tokens=256, top_p=0.95, top_k=0, temperature=0.8, mature_layer=None, premature_layer=None, candidate_premature_layers=[], mode='baseline', verbose=True, remove_stop_words=False, relative_top=0.1, **kwargs):
