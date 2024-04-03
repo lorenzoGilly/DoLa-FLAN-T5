@@ -7,7 +7,7 @@ import json
 
 import torch
 import torch.nn.functional as F
-from transformers import T5ForConditionalGeneration, AutoTokenizer, AutoModelForSeq2SeqLM
+from transformers import T5Tokenizer, T5ForConditionalGeneration, AutoTokenizer, AutoModelForSeq2SeqLM
 from transformers.generation.stopping_criteria import StoppingCriteriaList, T5StoppingCriteria
 
 import argparse
