@@ -29,38 +29,29 @@ class DoLaT5:
         self.model.to(device)
 
     def load_model(self, model_name):
+        if "t5" in model_name or "flan-t5" in model_name:
+            tokenizer = T5Tokenizer.from_pretrained(model_name)
+            model = T5ForConditionalGeneration.from_pretrained(model_name)
+        else:
+            tokenizer = AutoTokenizer.from_pretrained(model_name)
+            model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
+        
         if self.device == "cuda":
-            kwargs = {"torch_dtype": torch.float16, "offload_folder": f"{model_name}/offload"}
-            if self.num_gpus == "auto":
-                kwargs["device_map"] = "auto"
-            else:
-                self.num_gpus = int(self.num_gpus)
-                if self.num_gpus != 1:
-                    kwargs.update({
-                        "device_map": "auto",
-                        "max_memory": {i: f"{self.max_gpu_memory}GiB" for i in range(self.num_gpus)},
-                    })
+            model = model.to(self.device, dtype=torch.float16)
         elif self.device == "cpu":
-            kwargs = {}
+            model = model.to(self.device)
         else:
             raise ValueError(f"Invalid device: {self.device}")
-        
-        tokenizer = AutoTokenizer.from_pretrained(model_name)
-        model = AutoModelForSeq2SeqLM.from_pretrained(model_name,
-            low_cpu_mem_usage=True, **kwargs)
-
-        if self.device == "cuda" and self.num_gpus == 1:
-            model.cuda()
         
         return model, tokenizer
 
     def set_stop_words(self, stop_words):
         self.stop_words = stop_words
-        self.stopping_criteria = StoppingCriteriaList()
-        list_stop_word_ids = [[2247, 10]]
-        print("Added stop word: ", stop_words, 'with the ids', list_stop_word_ids, flush=True)
+        #self.stopping_criteria = StoppingCriteriaList()
+        #list_stop_word_ids = [[2247, 10]]
+        #print("Added stop word: ", stop_words, 'with the ids', list_stop_word_ids, flush=True)
 
-        self.stopping_criteria.append(T5StoppingCriteria(list_stop_word_ids))
+        #self.stopping_criteria.append(T5StoppingCriteria(list_stop_word_ids))
 
     def generate(self, input_text, max_new_tokens=256, top_p=0.95, top_k=0, temperature=0.8, mature_layer=None, premature_layer=None, candidate_premature_layers=[], mode='baseline', verbose=True, remove_stop_words=False, relative_top=0.1, **kwargs):
         with torch.no_grad():
