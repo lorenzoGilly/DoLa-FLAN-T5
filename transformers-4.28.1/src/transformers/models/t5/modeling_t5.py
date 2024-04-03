@@ -1732,7 +1732,7 @@ class T5ForConditionalGeneration(T5PreTrainedModel):
             logits_dict = {}
             # loss_dict = {}
             for i, early_exit_layer in enumerate(early_exit_layers):
-                logits = self.lm_head(outputs.hidden_states[early_exit_layer])
+                logits = self.lm_head(decoder_outputs.hidden_states[early_exit_layer])
                 logits_dict[early_exit_layer] = logits
             loss = None
             if labels is not None:
